@@ -9,21 +9,18 @@
 </head>
 <body class="bg-gray-100 min-h-screen" onload="loadDataFromGoogle()">
 
-    <!-- 상단 네비게이션 -->
     <div class="bg-blue-600 shadow-md sticky top-0 z-50 text-white">
         <div class="max-w-md mx-auto px-4 flex justify-around">
             <button id="btn-student" onclick="switchMode('student')" class="py-4 px-2 border-b-4 border-white font-bold w-1/2 text-center">📱 학생용 입력</button>
-            <button id="btn-admin" onclick="checkAdminPassword()" class="py-4 px-2 text-blue-200 font-bold w-1/2 text-center opacity-80 hover:opacity-100">🔒 숙제 관리</button>
+            <button id="btn-admin" onclick="checkAdminPassword()" class="py-4 px-2 text-blue-200 font-bold w-1/2 text-center opacity-80 hover:opacity-100">🔒 원장님 관리</button>
         </div>
     </div>
 
     <div class="max-w-md mx-auto p-4 pb-24">
-        <!-- 로딩 상태 바 -->
         <div id="status-bar" class="hidden bg-blue-50 text-blue-700 text-xs text-center py-2 rounded-xl border border-blue-100 mb-3 font-medium">
             ⏳ 구글 시트와 실시간 연동 중입니다...
         </div>
 
-        <!-- ================= [학생용 화면] ================= -->
         <div id="view-student" class="block space-y-4">
             <div class="text-center py-2">
                 <h1 class="text-xl font-black text-slate-800 tracking-tight">이튼영어수학학원</h1>
@@ -31,7 +28,7 @@
             </div>
 
             <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3">
-                <h2 class="text-base font-bold text-gray-800">👋반갑습니다! 학년과 이름을 골라주세요.</h2>
+                <h2 class="text-base font-bold text-gray-800">👋 학년과 이름을 골라라</h2>
                 <div>
                     <label class="text-xs text-gray-400 block mb-1">학년 선택</label>
                     <select id="student-grade-selector" onchange="filterStudentNames()" class="w-full p-3 bg-gray-50 border rounded-xl font-medium text-gray-700 focus:outline-none">
@@ -57,8 +54,16 @@
                 </div>
             </div>
 
+            <div id="student-welcome-section" class="hidden bg-white p-5 rounded-2xl shadow-sm flex justify-between items-center border border-emerald-100 bg-emerald-50/30">
+                <div>
+                    <p class="text-xs text-gray-400">안녕하세요</p>
+                    <h3 class="text-base font-bold text-gray-800" id="welcome-student-name">학생 이름</h3>
+                </div>
+                <button onclick="changeStudentPasswordPrompt()" class="text-xs bg-gray-200 hover:bg-gray-300 font-bold text-gray-600 px-3 py-2 rounded-xl transition-colors">🔒 비밀번호 변경</button>
+            </div>
+
             <div id="student-homework-list-section" class="hidden bg-white p-5 rounded-2xl shadow-sm space-y-3">
-                <h3 class="text-xs font-bold text-gray-400 uppercase" id="welcome-student-msg">📋 오늘 제출할 숙제 선택</h3>
+                <h3 class="text-xs font-bold text-gray-400 uppercase">📋 오늘 제출할 숙제 선택</h3>
                 <div id="student-homework-buttons" class="space-y-2"></div>
             </div>
 
@@ -74,9 +79,7 @@
             </div>
         </div>
 
-        <!-- ================= [원장님 관리 화면] ================= -->
         <div id="view-admin" class="hidden space-y-6">
-            <!-- ✨ 사이트에서 바로 내는 입력 인터페이스 완벽 부활 -->
             <div class="bg-white p-5 rounded-2xl shadow-sm space-y-4">
                 <h3 class="text-base font-bold text-gray-800">📚 1. 실시간 숙제 배부 및 마감 관리</h3>
                 <div class="space-y-3">
@@ -118,7 +121,7 @@
 
     <script>
         // ⚠️ 본인의 구글 웹앱 URL을 정확하게 붙여넣으세요!
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyb1cK0bTgS-Hl0aAIinweZrs1Y7nx6OMf6S7i5FdK2gmqRZ4eJ9MXsk_RgwSEdSg8Q/exec";
+        const WEB_APP_URL = "여기에_방금_복사한_웹앱_URL을_넣으세요";
         const ADMIN_PASSWORD = "0948";
 
         let students = [];
@@ -130,7 +133,7 @@
         let isStudentAuthenticated = false;
 
         function loadDataFromGoogle() {
-            if (!WEB_APP_URL || WEB_APP_URL.includes("여기에_방금_복사한")) return;
+            if (!WEB_APP_URL || WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbzQzCWjdFKTo4FQ8I76XcthCp_bpiiqXu0WTADerkJ3tpJCv-Co-aI-ZpfgahP0yoxM/exec")) return;
             const statusBar = document.getElementById('status-bar');
             statusBar.classList.remove('hidden');
 
@@ -210,10 +213,54 @@
             if (inputPw === studentObj.password) {
                 isStudentAuthenticated = true;
                 document.getElementById('student-auth-section').classList.add('hidden');
+                
+                // 환영 바 노출
+                document.getElementById('student-welcome-section').classList.remove('hidden');
+                document.getElementById('welcome-student-name').textContent = `[${studentObj.grade}] ${studentObj.name}`;
+                
                 loadStudentHomeworkList();
             } else {
                 alert("❌ 비밀번호가 틀렸습니다.");
             }
+        }
+
+        // 🚀 [학생용 추가] 비번 수동 변경 연동 기능
+        function changeStudentPasswordPrompt() {
+            const studentObj = students.find(s => s.id == activeStudentId);
+            if (!studentObj) return;
+
+            const newPw = prompt(`🔒 [${studentObj.name}] 학생, 새로 사용할 비밀번호 4자리를 입력하세요:`);
+            if (newPw === null) return;
+            
+            const trimmed = newPw.trim();
+            if (trimmed.length !== 4 || isNaN(trimmed)) {
+                return alert("❌ 반드시 숫자 4자리로 입력해야 합니다!");
+            }
+
+            const statusBar = document.getElementById('status-bar');
+            statusBar.classList.remove('hidden');
+
+            const payload = {
+                type: "CHANGE_PASSWORD",
+                grade: studentObj.grade,
+                name: studentObj.name,
+                newPassword: trimmed
+            };
+
+            fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(data => {
+                if(data.result === "success") {
+                    alert("🎉 비밀번호가 안전하게 변경되었습니다. 다음 로그인부터 적용됩니다!");
+                    loadDataFromGoogle(); // 내부 캐시 갱신
+                    resetStudentView();
+                } else {
+                    alert("오류 발생: " + data.message);
+                }
+            })
+            .finally(() => {
+                statusBar.classList.add('hidden');
+            });
         }
 
         function loadStudentHomeworkList() {
@@ -223,7 +270,6 @@
             const btnContainer = document.getElementById('student-homework-buttons');
             
             btnContainer.innerHTML = '';
-            document.getElementById('welcome-student-msg').innerHTML = `📋 <span class="text-blue-600 font-bold">${studentObj.name}</span> 학생, 오늘 제출할 숙제 선택`;
 
             const myGradeHomeworks = homeworks.filter(hw => hw.active !== false && hw.targetGrade === studentObj.grade);
             if(myGradeHomeworks.length === 0) {
@@ -295,7 +341,6 @@
             });
         }
 
-        // 🚀 [핵심 추가] 사이트에서 직접 숙제를 추가하여 구글 서버로 원격 전송하는 함수
         function addNewHomeworkToServer() {
             const grade = document.getElementById('hw-target-grade').value;
             const title = document.getElementById('hw-title').value.trim();
@@ -316,13 +361,11 @@
                 document.getElementById('hw-title').value = '';
                 btn.disabled = false;
                 btn.textContent = "🚀 구글 시트 연동하여 배부하기";
-                loadDataFromGoogle(); // 리스트 갱신
+                loadDataFromGoogle();
             });
         }
 
-        // 🚀 [핵심 추가] 사이트에서 마감 버튼을 눌렀을 때 구글 시트 셀 상태를 업데이트하는 함수
         function toggleHomeworkStatusServer(id, statusText) {
-            const btn = document.getElementById('add-hw-btn');
             if(!confirm(`이 숙제를 ${statusText}하시겠습니까?`)) return;
 
             const payload = { type: "TOGGLE_HW", id: id, status: statusText };
@@ -336,6 +379,7 @@
 
         function hideStudentSubSections() {
             document.getElementById('student-auth-section').classList.add('hidden');
+            document.getElementById('student-welcome-section').classList.add('hidden');
             document.getElementById('student-homework-list-section').classList.add('hidden');
             document.getElementById('homework-input-section').classList.add('hidden');
         }
@@ -373,6 +417,7 @@
 
         function resetStudentView() {
             document.getElementById('student-grade-selector').value = "";
+            document.getElementById('student-password-input').value = "";
             filterStudentNames(); isStudentAuthenticated = false;
         }
     </script>
